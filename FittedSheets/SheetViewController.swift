@@ -9,7 +9,15 @@
 #if os(iOS) || os(tvOS) || os(watchOS)
 import UIKit
 
+public protocol SheetViewControllerDelegate: NSObjectProtocol {
+    
+    func sheetViewController(_ sheetViewController: SheetViewController, didChangedWithContentOffset offset: CGFloat)
+}
+
 public class SheetViewController: UIViewController {
+    
+    public weak var delegate: SheetViewControllerDelegate? = nil
+    
     public private(set) var options: SheetOptions
     
     /// Default value for autoAdjustToKeyboard. Defaults to true.
@@ -392,6 +400,7 @@ public class SheetViewController: UIViewController {
             case .began, .changed:
                 self.contentViewHeightConstraint.constant = newHeight
                 
+                delegate?.sheetViewController(self, didChangedWithContentOffset: maxHeight - newHeight)
                 if offset > 0 {
                     let percent = max(0, min(1, offset / max(1, newHeight)))
                     self.transition.setPresentor(percentComplete: percent)
@@ -407,7 +416,7 @@ public class SheetViewController: UIViewController {
                     // They swiped hard, always just close the sheet when they do
                     finalHeight = -1
                 }
-                
+            
                 let animationDuration = TimeInterval(abs(velocity*0.0002) + 0.2)
                 
                 guard finalHeight > 0 || !self.dismissOnPull else {
@@ -423,6 +432,7 @@ public class SheetViewController: UIViewController {
                         self.view.backgroundColor = UIColor.clear
                         self.transition.setPresentor(percentComplete: 1)
                         self.overlayView.alpha = 0
+                        self.delegate?.sheetViewController(self, didChangedWithContentOffset: maxHeight - newHeight)
                     }, completion: { complete in
                         self.attemptDismiss(animated: false)
                     })
